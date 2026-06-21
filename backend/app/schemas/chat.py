@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 class MessageRequest(BaseModel):
     session_id: str = Field(min_length=1, max_length=128)
     message: str = Field(min_length=1, max_length=20000)
+    address_as: str | None = Field(default=None, max_length=40)
 
     @field_validator("message")
     @classmethod
@@ -17,6 +18,7 @@ class MessageRequest(BaseModel):
 class StreamRequest(BaseModel):
     session_id: str = Field(min_length=1, max_length=128)
     message: str = Field(min_length=1, max_length=20000)
+    address_as: str | None = Field(default=None, max_length=40)
 
     @field_validator("message")
     @classmethod

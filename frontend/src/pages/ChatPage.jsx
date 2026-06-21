@@ -3,9 +3,11 @@ import { clearHistory, fetchHistory, streamMessage } from '../api/chatApi'
 import ChatHeader from '../components/ChatHeader'
 import ChatInput from '../components/ChatInput'
 import MessageCard from '../components/MessageCard'
+import NicknameModal from '../components/NicknameModal'
 import Sidebar from '../components/Sidebar'
 import TypingIndicator from '../components/TypingIndicator'
 import { addSession, getSessions, getGreeting, removeSession } from '../utils/history'
+import { getAddressAs, setAddressAs } from '../utils/preferences'
 import { getSessionId, resetSessionId } from '../utils/session'
 import '../styles/chat.css'
 
@@ -15,7 +17,15 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [streamText, setStreamText] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [addressAs, setAddressAsState] = useState(getAddressAs)
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
   const bottomRef = useRef(null)
+
+  function handleSaveNickname(value) {
+    setAddressAs(value)
+    setAddressAsState(value)
+  }
 
   // current working session id (separate from "activeId" which drives the sidebar selection)
   const sessionIdRef = useRef(getSessionId())
@@ -66,7 +76,7 @@ export default function ChatPage() {
 
     let full = ''
     try {
-      for await (const token of streamMessage(sid, text)) {
+      for await (const token of streamMessage(sid, text, addressAs)) {
         full += token
         setStreamText(full)
       }
@@ -85,28 +95,49 @@ export default function ChatPage() {
 
   const greeting = getGreeting()
   const showGreeting = messages.length === 0 && !isLoading
+  const displayName = addressAs || 'Preetham'
 
   return (
     <div className="app">
-      <Sidebar
-        sessions={sessions}
-        activeId={activeId}
-        onSelect={loadSession}
-        onNewChat={handleNewChat}
-        onDelete={handleDelete}
-      />
+      {sidebarOpen && (
+        <Sidebar
+          sessions={sessions}
+          activeId={activeId}
+          onSelect={loadSession}
+          onNewChat={handleNewChat}
+          onDelete={handleDelete}
+          onClose={() => setSidebarOpen(false)}
+          onProfileClick={() => setShowNicknameModal(true)}
+        />
+      )}
+
+      {showNicknameModal && (
+        <NicknameModal
+          current={addressAs}
+          onSave={handleSaveNickname}
+          onClose={() => setShowNicknameModal(false)}
+        />
+      )}
 
       <div className="main">
-        <ChatHeader onNewChat={handleNewChat} />
+        <ChatHeader onMenuClick={() => setSidebarOpen((o) => !o)} />
 
         <div className="content">
           {showGreeting ? (
             <div className="greeting">
-              <div className="orb" />
-              <h1 className="greet-line1">{greeting}, Preetham</h1>
-              <h2 className="greet-line2">
-                How Can I <span className="greet-accent">Help You Today?</span>
-              </h2>
+              <div className="sparkle">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4L12 2z" fill="url(#sparkleGrad)"/>
+                  <defs>
+                    <linearGradient id="sparkleGrad" x1="3" y1="2" x2="21" y2="20">
+                      <stop offset="0%" stopColor="#FF9152"/>
+                      <stop offset="100%" stopColor="#FF6B2C"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h1 className="greet-headline">Where should we start?</h1>
+              <p className="greet-sub">{greeting}, {displayName}</p>
             </div>
           ) : (
             <div className="messages">

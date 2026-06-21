@@ -67,13 +67,19 @@ async def _get_rag_context(user_id: str, query: str) -> str:
         return ""
 
 
-async def get_reply(user_id: str, session_id: str, user_message: str) -> str:
+def _address_as_instruction(address_as: str | None) -> str:
+    if not address_as or not address_as.strip():
+        return ""
+    return f"\n\nAddress the user as \"{address_as.strip()}\" — work it in naturally the way a friend would use a nickname, not in every single message."
+
+
+async def get_reply(user_id: str, session_id: str, user_message: str, address_as: str | None = None) -> str:
     await append_message(user_id, session_id, "user", user_message)
     history = await get_history(user_id, session_id)
     trimmed = history[-MAX_HISTORY_MESSAGES:]
 
     rag_ctx = await _get_rag_context(user_id, user_message)
-    system = SYSTEM_PROMPT + rag_ctx
+    system = SYSTEM_PROMPT + _address_as_instruction(address_as) + rag_ctx
 
     try:
         client = ollama.AsyncClient(
@@ -93,13 +99,15 @@ async def get_reply(user_id: str, session_id: str, user_message: str) -> str:
     return reply
 
 
-async def stream_reply(user_id: str, session_id: str, user_message: str) -> AsyncGenerator[str, None]:
+async def stream_reply(
+    user_id: str, session_id: str, user_message: str, address_as: str | None = None
+) -> AsyncGenerator[str, None]:
     await append_message(user_id, session_id, "user", user_message)
     history = await get_history(user_id, session_id)
     trimmed = history[-MAX_HISTORY_MESSAGES:]
 
     rag_ctx = await _get_rag_context(user_id, user_message)
-    system = SYSTEM_PROMPT + rag_ctx
+    system = SYSTEM_PROMPT + _address_as_instruction(address_as) + rag_ctx
 
     client = ollama.AsyncClient(
         host=settings.OLLAMA_BASE_URL,

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("/message", response_model=MessageResponse)
 async def send_message(body: MessageRequest, user: CurrentUser = Depends(get_current_user)):
     try:
-        reply = await get_reply(user.id, body.session_id, body.message)
+        reply = await get_reply(user.id, body.session_id, body.message, body.address_as)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Model unavailable: {str(e)}")
     return MessageResponse(reply=reply, session_id=body.session_id)
@@ -32,7 +32,7 @@ async def send_message(body: MessageRequest, user: CurrentUser = Depends(get_cur
 async def stream_message(body: StreamRequest, user: CurrentUser = Depends(get_current_user)):
     async def generator():
         try:
-            async for chunk in stream_reply(user.id, body.session_id, body.message):
+            async for chunk in stream_reply(user.id, body.session_id, body.message, body.address_as):
                 yield chunk
         except Exception as e:
             import json

@@ -1,20 +1,20 @@
 const BASE = '/api/v1/chat'
 
-export async function sendMessage(sessionId, message) {
+export async function sendMessage(sessionId, message, addressAs) {
   const res = await fetch(`${BASE}/message`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, message }),
+    body: JSON.stringify({ session_id: sessionId, message, address_as: addressAs || undefined }),
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }
 
-export async function* streamMessage(sessionId, message) {
+export async function* streamMessage(sessionId, message, addressAs) {
   const res = await fetch(`${BASE}/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, message }),
+    body: JSON.stringify({ session_id: sessionId, message, address_as: addressAs || undefined }),
   })
   if (!res.ok) throw new Error(await res.text())
 
